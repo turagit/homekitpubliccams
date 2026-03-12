@@ -1,83 +1,46 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "HomeKit Public Cams Configuration",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "homekitpubliccams config",
   "type": "object",
   "properties": {
-    "provider": {
-      "title": "Source provider",
-      "description": "Select the backend service used to source camera media.",
-      "type": "string",
-      "enum": ["nasa-api", "nasa-library", "curated-feed"],
-      "oneOf": [
-        { "const": "nasa-api", "title": "NASA API" },
-        { "const": "nasa-library", "title": "NASA Image/Video Library" },
-        { "const": "curated-feed", "title": "Curated Feed" }
-      ]
-    },
-    "presetId": {
-      "title": "Feed preset",
-      "description": "Select a provider-specific preset feed.",
-      "type": "string"
-    }
-  },
-  "required": ["provider", "presetId"],
-  "allOf": [
-    {
-      "if": {
-        "properties": {
-          "provider": { "const": "nasa-api" }
+    "streaming": {
+      "type": "object",
+      "description": "Streaming runtime options. Supports internal preferred backend with automatic ffmpeg fallback for compatibility RTP/H.264 packaging.",
+      "properties": {
+        "preferredEncoderBackend": {
+          "type": "string",
+          "enum": ["internal", "ffmpeg"],
+          "default": "internal",
+          "description": "Preferred encoder backend. internal is attempted first when capability probe passes; ffmpeg remains guaranteed compatibility path and fallback."
         },
-        "required": ["provider"]
-      },
-      "then": {
-        "properties": {
-          "presetId": {
-            "enum": ["curiosity-latest", "perseverance-latest", "apod"],
-            "oneOf": [
-              { "const": "curiosity-latest", "title": "Curiosity (Latest)" },
-              { "const": "perseverance-latest", "title": "Perseverance (Latest)" },
-              { "const": "apod", "title": "Astronomy Picture of the Day" }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "provider": { "const": "nasa-library" }
-        },
-        "required": ["provider"]
-      },
-      "then": {
-        "properties": {
-          "presetId": {
-            "enum": ["jwst-featured", "hubble-featured"],
-            "oneOf": [
-              { "const": "jwst-featured", "title": "JWST Featured" },
-              { "const": "hubble-featured", "title": "Hubble Featured" }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "provider": { "const": "curated-feed" }
-        },
-        "required": ["provider"]
-      },
-      "then": {
-        "properties": {
-          "presetId": {
-            "enum": ["nasa-mixed"],
-            "oneOf": [
-              { "const": "nasa-mixed", "title": "NASA Mixed Feed" }
-            ]
-          }
+        "constraints": {
+          "type": "object",
+          "description": "Codec/profile requirements for HomeKit RTP video.",
+          "properties": {
+            "codec": {
+              "type": "string",
+              "const": "h264",
+              "description": "Must be h264."
+            },
+            "profile": {
+              "type": "string",
+              "enum": ["baseline", "main", "high"],
+              "description": "H.264 profile supported by the streaming backends."
+            },
+            "level": {
+              "type": "string",
+              "enum": ["3.1", "4.0"],
+              "description": "H.264 level constraints validated before stream start."
+            },
+            "packetizationMode": {
+              "type": "integer",
+              "const": 1,
+              "description": "RTP packetization mode. Only mode 1 is supported."
+            }
+          },
+          "required": ["codec", "profile", "level", "packetizationMode"]
         }
       }
     }
-  ]
+  }
 }
