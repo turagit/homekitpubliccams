@@ -1,4 +1,132 @@
 {
+<<<<<<< codex/analyze-proposal-for-homebridge-nasa-plugin
+  "pluginAlias": "PublicSpaceCamPlatform",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "Configure synthetic HomeKit camera feeds using public NASA and related imagery.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Platform Name",
+        "type": "string",
+        "default": "Public SpaceCam"
+      },
+      "enabled": {
+        "title": "Enable Plugin",
+        "type": "boolean",
+        "default": true
+      },
+      "apiKey": {
+        "title": "NASA API Key (optional)",
+        "type": "string",
+        "description": "DEMO_KEY is rate-limited. Provide your own key for normal use."
+      },
+      "logLevel": {
+        "title": "Log Level",
+        "type": "string",
+        "default": "info",
+        "oneOf": [
+          { "title": "Error", "enum": ["error"] },
+          { "title": "Warn", "enum": ["warn"] },
+          { "title": "Info", "enum": ["info"] },
+          { "title": "Debug", "enum": ["debug"] }
+        ]
+      },
+      "defaultFrameIntervalSec": {
+        "title": "Default Frame Interval (seconds)",
+        "type": "integer",
+        "default": 4,
+        "minimum": 1
+      },
+      "defaultRefreshIntervalSec": {
+        "title": "Default Refresh Interval (seconds)",
+        "type": "integer",
+        "default": 900,
+        "minimum": 300
+      },
+      "cameras": {
+        "title": "Camera Sources",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "title": "Enabled",
+              "type": "boolean",
+              "default": true
+            },
+            "name": {
+              "title": "Camera Name",
+              "type": "string"
+            },
+            "sourceType": {
+              "title": "Source",
+              "type": "string",
+              "oneOf": [
+                { "title": "Curiosity Rover", "enum": ["curiosity"] },
+                { "title": "Perseverance Rover", "enum": ["perseverance"] },
+                { "title": "JWST", "enum": ["jwst"] },
+                { "title": "Hubble", "enum": ["hubble"] },
+                { "title": "APOD", "enum": ["apod"] },
+                { "title": "NASA Mixed Feed", "enum": ["nasa-mixed"] }
+              ]
+            },
+            "frameIntervalSec": {
+              "title": "Frame Interval (seconds)",
+              "type": "integer",
+              "default": 4,
+              "minimum": 1
+            },
+            "refreshIntervalSec": {
+              "title": "Refresh Interval (seconds)",
+              "type": "integer",
+              "default": 900,
+              "minimum": 300
+            },
+            "maxCacheItems": {
+              "title": "Max Cache Items",
+              "type": "integer",
+              "default": 100,
+              "minimum": 10
+            },
+            "maxDiskMb": {
+              "title": "Max Disk (MB)",
+              "type": "integer",
+              "default": 500,
+              "minimum": 50
+            },
+            "shuffle": {
+              "title": "Shuffle",
+              "type": "boolean",
+              "default": false
+            },
+            "retainLastGood": {
+              "title": "Retain Last Good Asset",
+              "type": "boolean",
+              "default": true
+            },
+            "preferLandscape": {
+              "title": "Prefer Landscape Images",
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "required": ["name", "sourceType"]
+        }
+      }
+    }
+  },
+  "layout": [
+    "name",
+    "enabled",
+    "apiKey",
+    "logLevel",
+    "defaultFrameIntervalSec",
+    "defaultRefreshIntervalSec",
+    "cameras"
+  ]
+=======
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "homekitpubliccams config",
   "type": "object",
@@ -43,4 +171,5 @@
       }
     }
   }
+>>>>>>> main
 }
