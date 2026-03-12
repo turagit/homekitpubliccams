@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "homekitpubliccams config",
+  "type": "object",
+  "properties": {
+    "streaming": {
+      "type": "object",
+      "description": "Streaming runtime options. Supports internal preferred backend with automatic ffmpeg fallback for compatibility RTP/H.264 packaging.",
+      "properties": {
+        "preferredEncoderBackend": {
+          "type": "string",
+          "enum": ["internal", "ffmpeg"],
+          "default": "internal",
+          "description": "Preferred encoder backend. internal is attempted first when capability probe passes; ffmpeg remains guaranteed compatibility path and fallback."
+        },
+        "constraints": {
+          "type": "object",
+          "description": "Codec/profile requirements for HomeKit RTP video.",
+          "properties": {
+            "codec": {
+              "type": "string",
+              "const": "h264",
+              "description": "Must be h264."
+            },
+            "profile": {
+              "type": "string",
+              "enum": ["baseline", "main", "high"],
+              "description": "H.264 profile supported by the streaming backends."
+            },
+            "level": {
+              "type": "string",
+              "enum": ["3.1", "4.0"],
+              "description": "H.264 level constraints validated before stream start."
+            },
+            "packetizationMode": {
+              "type": "integer",
+              "const": 1,
+              "description": "RTP packetization mode. Only mode 1 is supported."
+            }
+          },
+          "required": ["codec", "profile", "level", "packetizationMode"]
+        }
+      }
+    }
+  }
+}
