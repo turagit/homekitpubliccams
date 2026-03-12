@@ -1,20 +1,40 @@
-export type SourceProvider = 'nasa-api' | 'nasa-library' | 'curated-feed';
+export type LogLevel = 'error' | 'warn' | 'info' | 'debug';
 
-export type SourcePresetId =
-  | 'curiosity-latest'
-  | 'perseverance-latest'
-  | 'jwst-featured'
-  | 'hubble-featured'
+export type SourceType =
+  | 'curiosity'
+  | 'perseverance'
+  | 'jwst'
+  | 'hubble'
   | 'apod'
   | 'nasa-mixed';
 
-export interface CameraSourceConfig {
-  /**
-   * The source backend used to fetch and normalize media.
-   */
-  provider: SourceProvider;
-  /**
-   * Provider-specific preset that chooses the concrete data feed.
-   */
-  presetId: SourcePresetId;
+export interface CameraConfig {
+  enabled: boolean;
+  sourceType: SourceType;
+  name: string;
+  frameIntervalSec: number;
+  refreshIntervalSec: number;
+  maxCacheItems: number;
+  maxDiskMb: number;
+  shuffle: boolean;
+  retainLastGood: boolean;
+  preferLandscape: boolean;
+  minWidth?: number;
+  minHeight?: number;
+  overlayEnabled?: boolean;
+  overlayFields?: string[];
+}
+
+export interface PlatformConfig {
+  platform: string;
+  name: string;
+  enabled?: boolean;
+  apiKey?: string;
+  logLevel?: LogLevel;
+  storagePath?: string;
+  defaultFrameIntervalSec?: number;
+  defaultRefreshIntervalSec?: number;
+  maxConcurrentDownloads?: number;
+  globalDiskLimitMb?: number;
+  cameras?: CameraConfig[];
 }

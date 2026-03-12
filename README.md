@@ -1,25 +1,55 @@
-# homekitpubliccams
+# homebridge-public-spacecam
 
-## Streaming backends
+A Homebridge dynamic platform plugin that aims to expose synthetic HomeKit camera feeds built from public space imagery.
 
-The camera pipeline supports two encoder backends:
+## Current implementation status
 
-- **`internal` (preferred):** uses the in-process encoder/packetizer path when capability probe succeeds at startup.
-- **`ffmpeg` (compatibility):** uses an `ffmpeg` subprocess to package RTP/H.264. This path is the guaranteed fallback for broad platform compatibility.
+This repository now includes a stronger foundation layer:
 
-### Backend selection and fallback
+- dynamic platform registration and accessory synchronization
+- schema-driven configuration (`config.schema.json`)
+- typed configuration with runtime normalization, clamping, and duplicate detection
+- source adapter contract + source factory mapping
+- cache manager with dedupe + invalid-asset pruning + bounded eviction
+- frame scheduler with selectable ordering mode (`sequential`, `shuffle`, `newest-first`)
+- scaffolding for streaming sessions, diagnostics, image utilities, and networking
 
-`src/camera/session-manager.ts` runs a startup capability probe (`canUseInternalEncoder()`) and stores the preferred backend for session creation.
+## Architectural gaps still to complete
 
-If a session start fails while using `internal`, the session manager retries once with `ffmpeg` before returning an error.
+- HomeKit `CameraController` + RTP video transport implementation
+- real HTTP fetch/download + MIME/decoder validation
+- persistent on-disk cache + startup recovery
+- snapshots backed by current frame buffer
+- backoff/rate-limit governor across enabled sources
 
-### Codec/profile constraints
+## Codebase improvements applied in this revision
 
-For HomeKit RTP interoperability, current constraints are:
+1. **Config hardening**
+   - clamps and normalizes numeric fields safely
+   - trims camera names
+   - warns on duplicate `<sourceType>:<name>` camera keys
+   - enforces conservative refresh floor
+2. **Source abstraction cleanup**
+   - introduced `BaseSourceAdapter` with `validateConfig` contract
+   - introduced `createSourceAdapter` factory for deterministic source construction
+3. **Cache correctness**
+   - dedupes by `assetId`
+   - removes invalid assets before counting toward limits
+   - retains newest entries under max item count
+4. **Scheduler flexibility**
+   - adds order modes and reset support for deterministic behavior in tests
 
-- codec: `h264`
-- packetization mode: `1`
-- H.264 profile: `baseline`, `main`, or `high`
-- H.264 level: `3.1` or `4.0`
+## Recommended next steps
 
-If constraints cannot be met with `internal`, the fallback backend (`ffmpeg`) is used when available.
+- Implement real camera streaming (likely hybrid with ffmpeg at the transport edge for compatibility).
+- Replace in-memory cache with disk-backed `index.json` + atomic temp-file workflow.
+- Add unit tests for config validation, cache eviction/dedupe, and frame scheduler ordering.
+- Add source-specific adapters with mocked HTTP integration tests.
+
+## Development
+
+```bash
+npm install
+npm run check
+npm run build
+```

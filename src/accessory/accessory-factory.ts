@@ -1,14 +1,53 @@
-import type { CameraSourceConfig } from '../config/types';
-import { createSourceAdapter, type SourceAdapter } from '../sources/base-source';
+import { PlatformAccessory } from 'homebridge';
+import { CameraConfig } from '../config/types';
+import { PublicSpaceCamPlatform } from '../platform';
+import { SpaceCameraAccessory } from './space-camera-accessory';
 
-export interface CameraAccessory {
-  sourceAdapter: SourceAdapter;
-}
+export class AccessoryFactory {
+  constructor(private readonly platform: PublicSpaceCamPlatform) {}
 
-export function createCameraAccessory(config: CameraSourceConfig): CameraAccessory {
-  const sourceAdapter = createSourceAdapter(config);
+  public upsertCamera(config: CameraConfig): PlatformAccessory {
+    const uuid = this.platform.api.hap.uuid.generate(`public-spacecam:${config.sourceType}:${config.name}`);
+    const existing = this.platform.accessories.get(uuid);
 
-  return {
-    sourceAdapter,
-  };
+    if (existing) {
+      if (existing.displayName !== config.name) {
+        existing.displayName = config.name;
+      }
+      new SpaceCameraAccessory(this.platform, existing, config).update(config);
+      this.platform.api.updatePlatformAccessories([existing]);
+      return existing;
+    }
+
+    const accessory = new this.platform.api.platformAccessory(config.name, uuid);
+    accessory.context.cameraName = config.name;
+    accessory.context.sourceType = config.sourceType;
+
+    const info = accessory.getService(this.platform.Service.AccessoryInformation)
+      ?? accessory.addService(this.platform.Service.AccessoryInformation);
+    info
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Community')
+      .setCharacteristic(this.platform.Characteristic.Model, 'Public SpaceCam')
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, `${config.sourceType}:${config.name}`)
+      .setCharacteristic(this.platform.Characteristic.FirmwareRevision, '0.2.0');
+
+    const motionService = accessory.getService(this.platform.Service.MotionSensor)
+      ?? accessory.addService(this.platform.Service.MotionSensor);
+    motionService.setCharacteristic(this.platform.Characteristic.MotionDetected, false);
+
+    // Placeholder status service for foundation build. CameraController stream wiring is next milestone.
+    const switchService = accessory.getService(this.platform.Service.Switch)
+      ?? accessory.addService(this.platform.Service.Switch, `${config.name} Status`, 'status-switch');
+    switchService.setCharacteristic(this.platform.Characteristic.On, true);
+
+    new SpaceCameraAccessory(this.platform, accessory, config);
+    this.platform.api.registerPlatformAccessories(this.platform.pluginName, this.platform.platformName, [accessory]);
+    this.platform.accessories.set(uuid, accessory);
+    return accessory;
+  }
+
+  public removeAccessory(accessory: PlatformAccessory): void {
+    this.platform.api.unregisterPlatformAccessories(this.platform.pluginName, this.platform.platformName, [accessory]);
+    this.platform.accessories.delete(accessory.UUID);
+  }
 }
