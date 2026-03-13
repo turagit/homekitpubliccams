@@ -78,6 +78,7 @@ class PublicSpaceCamPlatform {
             || node_path_1.default.join(this.api.user.storagePath(), 'public-spacecam');
         this.cacheManager = new cache_manager_1.CacheManager(this.storagePath);
         warnings.forEach((warning) => this.log.warn(`[config] ${warning}`));
+        this.warnAboutRateLimits();
         this.api.on('didFinishLaunching', () => {
             this.log.info('Public SpaceCam platform launched.');
             this.syncAccessories().catch((err) => {
@@ -261,6 +262,28 @@ class PublicSpaceCamPlatform {
         const cam = this.accessoryFactory.getCameraAccessory(runtime.uuid);
         if (cam) {
             cam.snapshotProvider.setCurrentFrame(asset.localPath);
+        }
+    }
+    warnAboutRateLimits() {
+        const usingDemoKey = !this.parsedConfig.apiKey || this.parsedConfig.apiKey === 'DEMO_KEY';
+        const cameraCount = (this.parsedConfig.cameras ?? []).filter((c) => c.enabled !== false).length;
+        if (usingDemoKey) {
+            this.log.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            this.log.warn('[rate-limit] Using DEMO_KEY — limited to 30 req/hour and 50 req/day per IP.');
+            this.log.warn('[rate-limit] Get a FREE key at https://api.nasa.gov to raise limits to 1,000/hour.');
+            if (cameraCount > 2) {
+                this.log.warn(`[rate-limit] WARNING: ${cameraCount} cameras with DEMO_KEY will likely exceed the 50 req/day daily limit.`);
+                this.log.warn('[rate-limit] Reduce to 1-2 cameras or register a free API key.');
+            }
+            this.log.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            // Enforce a 2-hour minimum refresh for all cameras under DEMO_KEY
+            const DEMO_KEY_MIN_REFRESH = 7200;
+            for (const camera of this.parsedConfig.cameras ?? []) {
+                if (camera.refreshIntervalSec < DEMO_KEY_MIN_REFRESH) {
+                    this.log.warn(`[rate-limit] Camera "${camera.name}": refresh interval raised to ${DEMO_KEY_MIN_REFRESH}s to stay within DEMO_KEY daily limit.`);
+                    camera.refreshIntervalSec = DEMO_KEY_MIN_REFRESH;
+                }
+            }
         }
     }
     guessExtension(url) {

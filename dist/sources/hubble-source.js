@@ -21,7 +21,9 @@ class HubbleSource extends base_source_1.BaseSourceAdapter {
         // Get recent Hubble images
         const listUrl = 'https://hubblesite.org/api/v3/images?page=1&collection_name=news&order=desc';
         const listResponse = await this.http.fetchJson(listUrl, { timeoutMs: 15000 });
-        const images = Array.isArray(listResponse.data) ? listResponse.data.slice(0, 15) : [];
+        // Cap at 5 detail fetches: 1 list + 5 detail = 6 requests per refresh cycle.
+        // This keeps DEMO_KEY usage safe (~6 req / 7200s = <1/hour from this source).
+        const images = Array.isArray(listResponse.data) ? listResponse.data.slice(0, 5) : [];
         if (images.length === 0) {
             throw new Error('No HubbleSite results');
         }

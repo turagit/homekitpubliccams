@@ -22,6 +22,7 @@ export declare class PublicSpaceCamPlatform implements DynamicPlatformPlugin {
     private startFrameLoop;
     private refreshSource;
     private advanceFrame;
+    private warnAboutRateLimits;
     private guessExtension;
     private stopRuntime;
     private shutdown;
