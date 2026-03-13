@@ -54,33 +54,39 @@ class SpaceCamStreamingDelegate {
     prepareStream(request, callback) {
         const sessionId = request.sessionID;
         const videoSocket = (0, node_dgram_1.createSocket)('udp4');
-        videoSocket.bind(0);
-        const returnVideoPort = videoSocket.address().port;
-        const videoSsrc = this.hap.CameraController.generateSynchronisationSource();
-        const session = {
-            id: sessionId,
-            videoPort: request.video.port,
-            videoSrtpKey: request.video.srtp_key,
-            videoSrtpSalt: request.video.srtp_salt,
-            videoSsrc,
-            targetAddress: request.targetAddress,
-            returnVideoPort,
-            videoSocket,
-            width: 1280,
-            height: 720,
-            fps: 2,
-            bitrate: 512,
-        };
-        this.sessions.set(sessionId, session);
-        const response = {
-            video: {
-                port: returnVideoPort,
-                ssrc: videoSsrc,
-                srtp_key: request.video.srtp_key,
-                srtp_salt: request.video.srtp_salt,
-            },
-        };
-        callback(undefined, response);
+        videoSocket.on('error', (err) => {
+            this.log.error(`[${this.cameraName}] UDP socket error: ${err.message}`);
+            callback(err);
+        });
+        // bind(0) is async — wait for 'listening' before calling .address()
+        videoSocket.bind(0, () => {
+            const returnVideoPort = videoSocket.address().port;
+            const videoSsrc = this.hap.CameraController.generateSynchronisationSource();
+            const session = {
+                id: sessionId,
+                videoPort: request.video.port,
+                videoSrtpKey: request.video.srtp_key,
+                videoSrtpSalt: request.video.srtp_salt,
+                videoSsrc,
+                targetAddress: request.targetAddress,
+                returnVideoPort,
+                videoSocket,
+                width: 1280,
+                height: 720,
+                fps: 2,
+                bitrate: 512,
+            };
+            this.sessions.set(sessionId, session);
+            const response = {
+                video: {
+                    port: returnVideoPort,
+                    ssrc: videoSsrc,
+                    srtp_key: request.video.srtp_key,
+                    srtp_salt: request.video.srtp_salt,
+                },
+            };
+            callback(undefined, response);
+        });
     }
     handleStreamRequest(request, callback) {
         const sessionId = request.sessionID;

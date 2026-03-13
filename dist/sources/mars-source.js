@@ -16,28 +16,22 @@ class MarsSource extends base_source_1.BaseSourceAdapter {
         };
     }
     async refreshIndex() {
-        // Step 1: get the rover manifest to find the most recent sol with photos
-        const manifestUrl = this.nasaApiUrl(`/mars-photos/api/v1/manifests/${this.rover}`);
-        const manifestResponse = await this.http.fetchJson(manifestUrl);
-        const maxSol = manifestResponse.data?.photo_manifest?.max_sol;
-        if (!maxSol) {
-            throw new Error(`Could not determine max sol for ${this.rover}`);
-        }
-        // Step 2: fetch photos from the most recent sol. Walk back up to 5 sols
-        // if the latest sol has no photos (can happen on communication blackouts).
-        for (let solOffset = 0; solOffset <= 4; solOffset++) {
-            const sol = maxSol - solOffset;
+        // Walk backward from today to find a day with photos.
+        // Rovers don't always transmit every day (comm windows, dust storms, etc.).
+        for (let daysBack = 0; daysBack <= 10; daysBack++) {
+            const date = new Date();
+            date.setDate(date.getDate() - daysBack);
+            const earthDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
             const url = this.nasaApiUrl(`/mars-photos/api/v1/rovers/${this.rover}/photos`, {
-                sol: String(sol),
+                earth_date: earthDate,
                 page: '1',
             });
             try {
                 const response = await this.http.fetchJson(url);
                 const photos = response.data?.photos ?? [];
                 if (photos.length === 0) {
-                    continue; // Try the previous sol
+                    continue;
                 }
-                // Take up to 20 photos, prefer diverse cameras
                 const selected = this.selectDiversePhotos(photos, 20);
                 return selected.map((photo) => ({
                     id: `mars-${this.rover}-${photo.id}`,
