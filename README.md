@@ -52,7 +52,7 @@ A pre-built package is included in this repo. Clone and install directly:
 ```bash
 # On the Homebridge host (Linux VM, Raspberry Pi, etc.)
 git clone https://github.com/turagit/homekitpubliccams.git
-sudo npm install -g homekitpubliccams/homebridge-public-spacecam-1.0.0.tgz
+sudo npm install -g ./homekitpubliccams/homebridge-public-spacecam-1.0.0.tgz
 ```
 
 Then restart Homebridge.
