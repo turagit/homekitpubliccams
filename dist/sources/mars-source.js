@@ -16,12 +16,16 @@ class MarsSource extends base_source_1.BaseSourceAdapter {
         };
     }
     async refreshIndex() {
-        // Walk backward from today to find a day with photos.
-        // Rovers don't always transmit every day (comm windows, dust storms, etc.).
-        for (let daysBack = 0; daysBack <= 10; daysBack++) {
+        // Mars rover photos can lag weeks behind due to downlink/processing delays.
+        // Sample dates going back 90 days, skipping every 3 days to limit API calls
+        // to ~30 attempts max while covering a wide enough window.
+        const datesToTry = [];
+        for (let daysBack = 0; daysBack <= 90; daysBack += 3) {
             const date = new Date();
             date.setDate(date.getDate() - daysBack);
-            const earthDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            datesToTry.push(date.toISOString().split('T')[0]);
+        }
+        for (const earthDate of datesToTry) {
             const url = this.nasaApiUrl(`/mars-photos/api/v1/rovers/${this.rover}/photos`, {
                 earth_date: earthDate,
                 page: '1',
@@ -48,7 +52,34 @@ class MarsSource extends base_source_1.BaseSourceAdapter {
                 continue;
             }
         }
-        return [];
+        // If no photos found in the last 90 days, fall back to NASA Image Library
+        return this.fetchFromNasaLibrary();
+    }
+    async fetchFromNasaLibrary() {
+        const roverName = this.rover === 'curiosity' ? 'curiosity rover mars' : 'perseverance rover mars';
+        const url = `https://images-api.nasa.gov/search?q=${encodeURIComponent(roverName)}&media_type=image&page_size=20`;
+        const response = await this.http.fetchJson(url, { timeoutMs: 15000 });
+        const items = response.data?.collection?.items ?? [];
+        return items
+            .filter((item) => {
+            const d = item.data?.[0];
+            const link = item.links?.find((l) => l.rel === 'preview');
+            return d && d.media_type === 'image' && link?.href;
+        })
+            .map((item) => {
+            const d = item.data[0];
+            const link = item.links.find((l) => l.rel === 'preview');
+            return {
+                id: `mars-nasa-${d.nasa_id}`,
+                sourceId: this.rover,
+                title: d.title,
+                canonicalUrl: `https://images.nasa.gov/details/${d.nasa_id}`,
+                imageUrl: link.href,
+                publishedDate: d.date_created,
+                description: d.description,
+                credits: 'NASA/JPL-Caltech',
+            };
+        });
     }
     /** Pick photos from different cameras to get visual variety. */
     selectDiversePhotos(photos, max) {

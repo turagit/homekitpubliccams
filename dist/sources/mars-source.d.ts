@@ -4,6 +4,7 @@ export declare class MarsSource extends BaseSourceAdapter {
     constructor(rover: 'curiosity' | 'perseverance', apiKey?: string);
     getSourceInfo(): SourceInfo;
     refreshIndex(): Promise<SourceAsset[]>;
+    private fetchFromNasaLibrary;
     /** Pick photos from different cameras to get visual variety. */
     private selectDiversePhotos;
 }
