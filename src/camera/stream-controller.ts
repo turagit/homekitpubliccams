@@ -1,14 +1,301 @@
-export interface StreamSession {
-  sessionId: string;
-  startedAt: string;
+import { ChildProcess, spawn } from 'node:child_process';
+import {
+  CameraController,
+  CameraControllerOptions,
+  CameraStreamingDelegate,
+  HAP,
+  PrepareStreamCallback,
+  PrepareStreamRequest,
+  PrepareStreamResponse,
+  SnapshotRequest,
+  SnapshotRequestCallback,
+  StartStreamRequest,
+  StreamingRequest,
+  StreamRequestCallback,
+  StreamRequestTypes,
+} from 'homebridge';
+import { createSocket, Socket } from 'node:dgram';
+
+export interface FrameProvider {
+  getCurrentFramePath(): string | undefined;
 }
 
-export class StreamController {
-  public start(sessionId: string): StreamSession {
-    return { sessionId, startedAt: new Date().toISOString() };
+interface ActiveSession {
+  id: string;
+  videoPort: number;
+  videoSrtpKey: Buffer;
+  videoSrtpSalt: Buffer;
+  videoSsrc: number;
+  targetAddress: string;
+  ffmpeg?: ChildProcess;
+  returnVideoPort: number;
+  videoSocket: Socket;
+  refreshTimer?: ReturnType<typeof setInterval>;
+  width: number;
+  height: number;
+  fps: number;
+  bitrate: number;
+}
+
+export interface StreamLog {
+  info: (message: string, ...args: any[]) => void;
+  warn: (message: string, ...args: any[]) => void;
+  debug: (message: string, ...args: any[]) => void;
+  error: (message: string, ...args: any[]) => void;
+}
+
+export class SpaceCamStreamingDelegate implements CameraStreamingDelegate {
+  controller?: CameraController;
+  private readonly sessions = new Map<string, ActiveSession>();
+  private readonly ffmpegPath: string;
+
+  constructor(
+    private readonly hap: HAP,
+    private readonly frameProvider: FrameProvider,
+    private readonly cameraName: string,
+    private readonly log: StreamLog,
+    ffmpegPath?: string,
+  ) {
+    this.ffmpegPath = ffmpegPath || 'ffmpeg';
   }
 
-  public stop(_sessionId: string): void {
-    // Foundation stub.
+  handleSnapshotRequest(request: SnapshotRequest, callback: SnapshotRequestCallback): void {
+    const framePath = this.frameProvider.getCurrentFramePath();
+    if (!framePath) {
+      callback(new Error('No frame available'));
+      return;
+    }
+
+    const args = [
+      '-hide_banner',
+      '-loglevel', 'error',
+      '-i', framePath,
+      '-vf', `scale=${request.width}:${request.height}:force_original_aspect_ratio=decrease,pad=${request.width}:${request.height}:(ow-iw)/2:(oh-ih)/2:black`,
+      '-frames:v', '1',
+      '-f', 'image2',
+      '-codec:v', 'mjpeg',
+      '-q:v', '5',
+      'pipe:1',
+    ];
+
+    const ffmpeg = spawn(this.ffmpegPath, args);
+    const chunks: Buffer[] = [];
+
+    ffmpeg.stdout.on('data', (chunk: Buffer) => chunks.push(chunk));
+    ffmpeg.stderr.on('data', () => { /* suppress */ });
+
+    ffmpeg.on('close', (code) => {
+      if (code === 0 && chunks.length > 0) {
+        callback(undefined, Buffer.concat(chunks));
+      } else {
+        callback(new Error(`ffmpeg snapshot exited with code ${code}`));
+      }
+    });
+
+    ffmpeg.on('error', (err) => {
+      callback(err);
+    });
+  }
+
+  prepareStream(request: PrepareStreamRequest, callback: PrepareStreamCallback): void {
+    const sessionId = request.sessionID;
+    const videoSocket = createSocket('udp4');
+    videoSocket.bind(0);
+
+    const returnVideoPort = (videoSocket.address() as { port: number }).port;
+    const videoSsrc = this.hap.CameraController.generateSynchronisationSource();
+
+    const session: ActiveSession = {
+      id: sessionId,
+      videoPort: request.video.port,
+      videoSrtpKey: request.video.srtp_key,
+      videoSrtpSalt: request.video.srtp_salt,
+      videoSsrc,
+      targetAddress: request.targetAddress,
+      returnVideoPort,
+      videoSocket,
+      width: 1280,
+      height: 720,
+      fps: 2,
+      bitrate: 512,
+    };
+
+    this.sessions.set(sessionId, session);
+
+    const response: PrepareStreamResponse = {
+      video: {
+        port: returnVideoPort,
+        ssrc: videoSsrc,
+        srtp_key: request.video.srtp_key,
+        srtp_salt: request.video.srtp_salt,
+      },
+    };
+
+    callback(undefined, response);
+  }
+
+  handleStreamRequest(request: StreamingRequest, callback: StreamRequestCallback): void {
+    const sessionId = request.sessionID;
+
+    if (request.type === StreamRequestTypes.START) {
+      const startReq = request as StartStreamRequest;
+      const session = this.sessions.get(sessionId);
+      if (session) {
+        session.width = startReq.video.width;
+        session.height = startReq.video.height;
+        session.fps = Math.min(startReq.video.fps, 2);
+        session.bitrate = startReq.video.max_bit_rate;
+      }
+      this.startStream(sessionId);
+      callback();
+    } else if (request.type === StreamRequestTypes.STOP) {
+      this.stopStream(sessionId);
+      callback();
+    } else {
+      callback();
+    }
+  }
+
+  private startStream(sessionId: string): void {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
+
+    const framePath = this.frameProvider.getCurrentFramePath();
+    if (!framePath) {
+      this.log.warn(`[${this.cameraName}] No frame available to stream`);
+      return;
+    }
+
+    this.launchFfmpeg(session, framePath);
+    this.scheduleFrameRefresh(session);
+  }
+
+  private launchFfmpeg(session: ActiveSession, framePath: string): void {
+    const srtpParams = Buffer.concat([session.videoSrtpKey, session.videoSrtpSalt]).toString('base64');
+    const { width, height, fps, bitrate } = session;
+
+    const args = [
+      '-hide_banner',
+      '-loglevel', 'error',
+      '-re',
+      '-loop', '1',
+      '-f', 'image2',
+      '-framerate', String(fps),
+      '-i', framePath,
+      '-vf', `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:black`,
+      '-codec:v', 'libx264',
+      '-preset', 'ultrafast',
+      '-tune', 'stillimage',
+      '-b:v', `${bitrate}k`,
+      '-maxrate', `${bitrate}k`,
+      '-bufsize', `${bitrate * 2}k`,
+      '-pix_fmt', 'yuv420p',
+      '-profile:v', 'baseline',
+      '-level', '3.1',
+      '-g', String(fps * 4),
+      '-an',
+      '-f', 'rtp',
+      '-srtp_out_suite', 'AES_CM_128_HMAC_SHA1_80',
+      '-srtp_out_params', srtpParams,
+      `srtp://${session.targetAddress}:${session.videoPort}?rtcpport=${session.videoPort}&pkt_size=1316`,
+    ];
+
+    this.log.info(`[${this.cameraName}] Starting stream: ${width}x${height}@${fps}fps`);
+
+    const ffmpeg = spawn(this.ffmpegPath, args, { stdio: ['pipe', 'pipe', 'pipe'] });
+    session.ffmpeg = ffmpeg;
+
+    ffmpeg.stderr?.on('data', (data: Buffer) => {
+      const msg = data.toString().trim();
+      if (msg) {
+        this.log.debug(`[${this.cameraName}] ffmpeg: ${msg}`);
+      }
+    });
+
+    ffmpeg.on('error', (err) => {
+      this.log.error(`[${this.cameraName}] ffmpeg error: ${err.message}`);
+    });
+
+    ffmpeg.on('close', () => {
+      session.ffmpeg = undefined;
+    });
+  }
+
+  private scheduleFrameRefresh(session: ActiveSession): void {
+    let lastFramePath = this.frameProvider.getCurrentFramePath();
+
+    session.refreshTimer = setInterval(() => {
+      if (!this.sessions.has(session.id)) {
+        if (session.refreshTimer) {
+          clearInterval(session.refreshTimer);
+        }
+        return;
+      }
+
+      const currentFrame = this.frameProvider.getCurrentFramePath();
+      if (currentFrame && currentFrame !== lastFramePath) {
+        lastFramePath = currentFrame;
+        this.log.debug(`[${this.cameraName}] Frame changed, restarting ffmpeg`);
+        // Kill old ffmpeg, launch new one with updated frame
+        if (session.ffmpeg && !session.ffmpeg.killed) {
+          session.ffmpeg.kill('SIGTERM');
+        }
+        setTimeout(() => {
+          if (this.sessions.has(session.id) && currentFrame) {
+            this.launchFfmpeg(session, currentFrame);
+          }
+        }, 500);
+      }
+    }, 10_000);
+  }
+
+  private stopStream(sessionId: string): void {
+    const session = this.sessions.get(sessionId);
+    if (session) {
+      this.log.info(`[${this.cameraName}] Stopping stream`);
+      if (session.refreshTimer) {
+        clearInterval(session.refreshTimer);
+      }
+      if (session.ffmpeg && !session.ffmpeg.killed) {
+        session.ffmpeg.kill('SIGTERM');
+        setTimeout(() => {
+          if (session.ffmpeg && !session.ffmpeg.killed) {
+            session.ffmpeg.kill('SIGKILL');
+          }
+        }, 5000);
+      }
+      try {
+        session.videoSocket.close();
+      } catch {
+        // ignore
+      }
+      this.sessions.delete(sessionId);
+    }
+  }
+
+  public createCameraControllerOptions(): CameraControllerOptions {
+    return {
+      cameraStreamCount: 2,
+      delegate: this as CameraStreamingDelegate,
+      streamingOptions: {
+        supportedCryptoSuites: [this.hap.SRTPCryptoSuites.AES_CM_128_HMAC_SHA1_80],
+        video: {
+          resolutions: [
+            [1920, 1080, 15] as [number, number, number],
+            [1280, 720, 15] as [number, number, number],
+            [640, 480, 15] as [number, number, number],
+            [640, 360, 15] as [number, number, number],
+            [480, 360, 15] as [number, number, number],
+            [320, 240, 15] as [number, number, number],
+          ],
+          codec: {
+            profiles: [this.hap.H264Profile.BASELINE, this.hap.H264Profile.MAIN],
+            levels: [this.hap.H264Level.LEVEL3_1, this.hap.H264Level.LEVEL4_0],
+          },
+        },
+      },
+    };
   }
 }

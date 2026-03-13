@@ -1,13 +1,16 @@
 {
   "name": "homebridge-public-spacecam",
-  "version": "0.1.0",
-  "description": "Homebridge plugin exposing synthetic HomeKit cameras from public space imagery",
+  "version": "1.0.0",
+  "description": "Homebridge plugin exposing synthetic HomeKit cameras from public NASA and space imagery",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
-    "check": "tsc -p tsconfig.json --noEmit"
+    "check": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "jest --forceExit --detectOpenHandles",
+    "lint": "tsc -p tsconfig.json --noEmit"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -18,15 +21,23 @@
     "homebridge",
     "camera",
     "nasa",
-    "space"
+    "space",
+    "apod",
+    "jwst",
+    "hubble",
+    "mars",
+    "curiosity",
+    "perseverance"
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {
-    "homebridge": "^1.8.4"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "homebridge": "^1.8.4",
     "typescript": "^5.6.3",
-    "@types/node": "^22.10.2"
+    "@types/node": "^22.10.2",
+    "@types/jest": "^29.5.12",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2"
   }
 }

@@ -2,24 +2,28 @@
   "pluginAlias": "PublicSpaceCamPlatform",
   "pluginType": "platform",
   "singular": true,
-  "headerDisplay": "Configure synthetic HomeKit camera feeds using public NASA and related imagery.",
+  "headerDisplay": "Synthetic HomeKit cameras showing public NASA and space imagery. Each source appears as a separate camera in the Home app, cycling through periodically refreshed still images. **ffmpeg is required** — install it on your Homebridge host before using this plugin.",
+  "footerDisplay": "Images are from public NASA/ESA sources. This is an unofficial community plugin. For a free NASA API key visit https://api.nasa.gov",
   "schema": {
     "type": "object",
     "properties": {
       "name": {
         "title": "Platform Name",
         "type": "string",
-        "default": "Public SpaceCam"
+        "default": "Public SpaceCam",
+        "description": "The name shown in Homebridge logs."
       },
       "enabled": {
         "title": "Enable Plugin",
         "type": "boolean",
-        "default": true
+        "default": true,
+        "description": "Disable to remove all camera accessories without uninstalling."
       },
       "apiKey": {
-        "title": "NASA API Key (optional)",
+        "title": "NASA API Key",
         "type": "string",
-        "description": "DEMO_KEY is rate-limited. Provide your own key for normal use."
+        "placeholder": "DEMO_KEY",
+        "description": "Optional. Without a key, DEMO_KEY is used (limited to 30 requests/hour, 50/day per IP). Get a free key at https://api.nasa.gov to increase limits."
       },
       "logLevel": {
         "title": "Log Level",
@@ -30,85 +34,106 @@
           { "title": "Warn", "enum": ["warn"] },
           { "title": "Info", "enum": ["info"] },
           { "title": "Debug", "enum": ["debug"] }
-        ]
+        ],
+        "description": "Set to Debug for troubleshooting."
       },
       "defaultFrameIntervalSec": {
         "title": "Default Frame Interval (seconds)",
         "type": "integer",
-        "default": 4,
-        "minimum": 1
+        "default": 10,
+        "minimum": 2,
+        "maximum": 300,
+        "description": "How often the displayed image changes. Each camera can override this."
       },
       "defaultRefreshIntervalSec": {
         "title": "Default Refresh Interval (seconds)",
         "type": "integer",
         "default": 900,
-        "minimum": 300
+        "minimum": 300,
+        "maximum": 86400,
+        "description": "How often new images are fetched from NASA. Minimum 5 minutes. Each camera can override this."
       },
       "cameras": {
-        "title": "Camera Sources",
+        "title": "Cameras",
         "type": "array",
+        "description": "Each entry creates a separate camera accessory in HomeKit.",
         "items": {
           "type": "object",
           "properties": {
             "enabled": {
               "title": "Enabled",
               "type": "boolean",
-              "default": true
+              "default": true,
+              "description": "Uncheck to hide this camera without deleting its config."
             },
             "name": {
               "title": "Camera Name",
-              "type": "string"
+              "type": "string",
+              "placeholder": "e.g. Mars Rover",
+              "description": "The name shown in the Home app."
             },
             "sourceType": {
-              "title": "Source",
+              "title": "Image Source",
               "type": "string",
               "oneOf": [
-                { "title": "Curiosity Rover", "enum": ["curiosity"] },
-                { "title": "Perseverance Rover", "enum": ["perseverance"] },
-                { "title": "JWST", "enum": ["jwst"] },
-                { "title": "Hubble", "enum": ["hubble"] },
-                { "title": "APOD", "enum": ["apod"] },
+                { "title": "Curiosity Rover (Mars)", "enum": ["curiosity"] },
+                { "title": "Perseverance Rover (Mars)", "enum": ["perseverance"] },
+                { "title": "James Webb Space Telescope (JWST)", "enum": ["jwst"] },
+                { "title": "Hubble Space Telescope", "enum": ["hubble"] },
+                { "title": "Astronomy Picture of the Day (APOD)", "enum": ["apod"] },
                 { "title": "NASA Mixed Feed", "enum": ["nasa-mixed"] }
-              ]
+              ],
+              "description": "Which NASA image source to use for this camera."
             },
             "frameIntervalSec": {
               "title": "Frame Interval (seconds)",
               "type": "integer",
-              "default": 4,
-              "minimum": 1
+              "default": 10,
+              "minimum": 2,
+              "maximum": 300,
+              "description": "Override how often the displayed image changes for this camera."
             },
             "refreshIntervalSec": {
               "title": "Refresh Interval (seconds)",
               "type": "integer",
               "default": 900,
-              "minimum": 300
+              "minimum": 300,
+              "maximum": 86400,
+              "description": "Override how often new images are fetched for this camera."
             },
             "maxCacheItems": {
-              "title": "Max Cache Items",
+              "title": "Max Cached Images",
               "type": "integer",
-              "default": 100,
-              "minimum": 10
+              "default": 50,
+              "minimum": 5,
+              "maximum": 500,
+              "description": "Maximum number of images to keep on disk for this camera."
             },
             "maxDiskMb": {
-              "title": "Max Disk (MB)",
+              "title": "Max Disk Usage (MB)",
               "type": "integer",
-              "default": 500,
-              "minimum": 50
+              "default": 200,
+              "minimum": 20,
+              "maximum": 2000,
+              "description": "Maximum disk space for cached images."
             },
             "shuffle": {
-              "title": "Shuffle",
+              "title": "Shuffle Images",
               "type": "boolean",
-              "default": false
+              "default": false,
+              "description": "Show images in random order instead of newest first."
             },
             "retainLastGood": {
-              "title": "Retain Last Good Asset",
+              "title": "Keep Last Image on Error",
               "type": "boolean",
-              "default": true
+              "default": true,
+              "description": "If a refresh fails, keep showing the last good image."
             },
             "preferLandscape": {
               "title": "Prefer Landscape Images",
               "type": "boolean",
-              "default": true
+              "default": true,
+              "description": "When available, prefer wider images that look better on screens."
             }
           },
           "required": ["name", "sourceType"]
@@ -119,10 +144,43 @@
   "layout": [
     "name",
     "enabled",
-    "apiKey",
+    {
+      "key": "apiKey",
+      "type": "string"
+    },
     "logLevel",
-    "defaultFrameIntervalSec",
-    "defaultRefreshIntervalSec",
-    "cameras"
+    {
+      "type": "fieldset",
+      "title": "Defaults",
+      "expandable": true,
+      "items": [
+        "defaultFrameIntervalSec",
+        "defaultRefreshIntervalSec"
+      ]
+    },
+    {
+      "key": "cameras",
+      "type": "array",
+      "buttonText": "Add Camera",
+      "items": [
+        "cameras[].enabled",
+        "cameras[].name",
+        "cameras[].sourceType",
+        {
+          "type": "fieldset",
+          "title": "Advanced Settings",
+          "expandable": true,
+          "items": [
+            "cameras[].frameIntervalSec",
+            "cameras[].refreshIntervalSec",
+            "cameras[].maxCacheItems",
+            "cameras[].maxDiskMb",
+            "cameras[].shuffle",
+            "cameras[].retainLastGood",
+            "cameras[].preferLandscape"
+          ]
+        }
+      ]
+    }
   ]
 }
