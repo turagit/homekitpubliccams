@@ -45,14 +45,26 @@ ffmpeg -version
 
 ## Installation
 
-### From Homebridge UI (recommended)
+### From this repository (simplest — no build step required)
+
+A pre-built package is included in this repo. Clone and install directly:
+
+```bash
+# On the Homebridge host (Linux VM, Raspberry Pi, etc.)
+git clone https://github.com/turagit/homekitpubliccams.git
+sudo npm install -g homekitpubliccams/homebridge-public-spacecam-1.0.0.tgz
+```
+
+Then restart Homebridge.
+
+### From Homebridge UI
 
 1. Open the Homebridge web UI
 2. Go to the **Plugins** tab
 3. Search for `homebridge-public-spacecam`
 4. Click **Install**
 
-### From the command line
+### From the command line (npm registry)
 
 ```bash
 sudo npm install -g homebridge-public-spacecam
@@ -65,12 +77,6 @@ cd homebridge-public-spacecam
 npm install
 npm run build
 sudo npm link
-```
-
-Then in your Homebridge installation directory:
-
-```bash
-sudo npm link homebridge-public-spacecam
 ```
 
 ## Configuration

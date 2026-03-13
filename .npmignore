@@ -1,0 +1,7 @@
+.claude/
+test/
+*.test.ts
+jest.config.js
+docs/
+.gitignore
+.npmignore
