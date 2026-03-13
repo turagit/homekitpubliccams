@@ -100,38 +100,45 @@ export class SpaceCamStreamingDelegate implements CameraStreamingDelegate {
   prepareStream(request: PrepareStreamRequest, callback: PrepareStreamCallback): void {
     const sessionId = request.sessionID;
     const videoSocket = createSocket('udp4');
-    videoSocket.bind(0);
 
-    const returnVideoPort = (videoSocket.address() as { port: number }).port;
-    const videoSsrc = this.hap.CameraController.generateSynchronisationSource();
+    videoSocket.on('error', (err) => {
+      this.log.error(`[${this.cameraName}] UDP socket error: ${err.message}`);
+      callback(err);
+    });
 
-    const session: ActiveSession = {
-      id: sessionId,
-      videoPort: request.video.port,
-      videoSrtpKey: request.video.srtp_key,
-      videoSrtpSalt: request.video.srtp_salt,
-      videoSsrc,
-      targetAddress: request.targetAddress,
-      returnVideoPort,
-      videoSocket,
-      width: 1280,
-      height: 720,
-      fps: 2,
-      bitrate: 512,
-    };
+    // bind(0) is async — wait for 'listening' before calling .address()
+    videoSocket.bind(0, () => {
+      const returnVideoPort = (videoSocket.address() as { port: number }).port;
+      const videoSsrc = this.hap.CameraController.generateSynchronisationSource();
 
-    this.sessions.set(sessionId, session);
+      const session: ActiveSession = {
+        id: sessionId,
+        videoPort: request.video.port,
+        videoSrtpKey: request.video.srtp_key,
+        videoSrtpSalt: request.video.srtp_salt,
+        videoSsrc,
+        targetAddress: request.targetAddress,
+        returnVideoPort,
+        videoSocket,
+        width: 1280,
+        height: 720,
+        fps: 2,
+        bitrate: 512,
+      };
 
-    const response: PrepareStreamResponse = {
-      video: {
-        port: returnVideoPort,
-        ssrc: videoSsrc,
-        srtp_key: request.video.srtp_key,
-        srtp_salt: request.video.srtp_salt,
-      },
-    };
+      this.sessions.set(sessionId, session);
 
-    callback(undefined, response);
+      const response: PrepareStreamResponse = {
+        video: {
+          port: returnVideoPort,
+          ssrc: videoSsrc,
+          srtp_key: request.video.srtp_key,
+          srtp_salt: request.video.srtp_salt,
+        },
+      };
+
+      callback(undefined, response);
+    });
   }
 
   handleStreamRequest(request: StreamingRequest, callback: StreamRequestCallback): void {

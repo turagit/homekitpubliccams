@@ -11,22 +11,11 @@ interface MarsPhoto {
   earth_date: string;
   rover: {
     name: string;
-    max_sol: number;
-    max_date: string;
   };
 }
 
 interface MarsPhotosResponse {
   photos: MarsPhoto[];
-}
-
-interface RoverManifest {
-  photo_manifest: {
-    name: string;
-    max_sol: number;
-    max_date: string;
-    total_photos: number;
-  };
 }
 
 export class MarsSource extends BaseSourceAdapter {
@@ -46,21 +35,15 @@ export class MarsSource extends BaseSourceAdapter {
   }
 
   public async refreshIndex(): Promise<SourceAsset[]> {
-    // Step 1: get the rover manifest to find the most recent sol with photos
-    const manifestUrl = this.nasaApiUrl(`/mars-photos/api/v1/manifests/${this.rover}`);
-    const manifestResponse = await this.http.fetchJson<RoverManifest>(manifestUrl);
-    const maxSol = manifestResponse.data?.photo_manifest?.max_sol;
+    // Walk backward from today to find a day with photos.
+    // Rovers don't always transmit every day (comm windows, dust storms, etc.).
+    for (let daysBack = 0; daysBack <= 10; daysBack++) {
+      const date = new Date();
+      date.setDate(date.getDate() - daysBack);
+      const earthDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
 
-    if (!maxSol) {
-      throw new Error(`Could not determine max sol for ${this.rover}`);
-    }
-
-    // Step 2: fetch photos from the most recent sol. Walk back up to 5 sols
-    // if the latest sol has no photos (can happen on communication blackouts).
-    for (let solOffset = 0; solOffset <= 4; solOffset++) {
-      const sol = maxSol - solOffset;
       const url = this.nasaApiUrl(`/mars-photos/api/v1/rovers/${this.rover}/photos`, {
-        sol: String(sol),
+        earth_date: earthDate,
         page: '1',
       });
 
@@ -69,10 +52,9 @@ export class MarsSource extends BaseSourceAdapter {
         const photos = response.data?.photos ?? [];
 
         if (photos.length === 0) {
-          continue; // Try the previous sol
+          continue;
         }
 
-        // Take up to 20 photos, prefer diverse cameras
         const selected = this.selectDiversePhotos(photos, 20);
 
         return selected.map((photo) => ({
