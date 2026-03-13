@@ -52,10 +52,12 @@ A pre-built package is included in this repo. Clone and install directly:
 ```bash
 # On the Homebridge host (Linux VM, Raspberry Pi, etc.)
 git clone https://github.com/turagit/homekitpubliccams.git
-sudo npm install -g ./homekitpubliccams/homebridge-public-spacecam-1.0.0.tgz
+cd homekitpubliccams
+npm install --prefix /var/lib/homebridge homebridge-public-spacecam-1.0.0.tgz
+hb-service restart
 ```
 
-Then restart Homebridge.
+> **Note:** Homebridge loads plugins from `/var/lib/homebridge/node_modules`, not from the global npm prefix. Using `--prefix /var/lib/homebridge` installs directly into the right location. Do **not** use `npm install -g`.
 
 ### From Homebridge UI
 
