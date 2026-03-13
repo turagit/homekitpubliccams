@@ -36,7 +36,8 @@ export class ApodSource extends BaseSourceAdapter {
         sourceId: 'apod',
         title: item.title || `APOD ${item.date}`,
         canonicalUrl: `https://apod.nasa.gov/apod/ap${item.date.replace(/-/g, '').slice(2)}.html`,
-        imageUrl: item.hdurl || item.url,
+        // Prefer regular url over hdurl — HD images can be >20MB and cause download timeouts
+        imageUrl: item.url,
         publishedDate: item.date,
         description: item.explanation,
         credits: item.copyright,
