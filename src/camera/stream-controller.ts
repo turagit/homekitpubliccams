@@ -209,7 +209,7 @@ export class SpaceCamStreamingDelegate implements CameraStreamingDelegate {
       '-f', 'rtp',
       '-srtp_out_suite', 'AES_CM_128_HMAC_SHA1_80',
       '-srtp_out_params', srtpParams,
-      `srtp://${session.targetAddress}:${session.videoPort}?rtcpport=${session.videoPort}&localrtcpport=${session.returnVideoPort}&pkt_size=1316`,
+      `srtp://${session.targetAddress}:${session.videoPort}?rtcpport=${session.videoPort}&pkt_size=1316`,
     ];
 
     this.log.info(`[${this.cameraName}] Starting stream: ${width}x${height}@${fps}fps, ssrc=${session.videoSsrc}`);
