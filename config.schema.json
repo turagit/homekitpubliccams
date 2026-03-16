@@ -52,12 +52,12 @@
         "type": "array",
         "description": "Each entry creates a separate camera accessory in HomeKit showing a different Mars rover viewpoint.",
         "default": [
-          { "name": "Curiosity Front", "sourceType": "msl-front", "enabled": true },
-          { "name": "Curiosity Rear", "sourceType": "msl-rear", "enabled": true },
-          { "name": "Curiosity Left", "sourceType": "msl-left", "enabled": true },
-          { "name": "Curiosity Right", "sourceType": "msl-right", "enabled": true },
-          { "name": "Perseverance Front Left", "sourceType": "m20-front-left", "enabled": true },
-          { "name": "Perseverance Front Right", "sourceType": "m20-front-right", "enabled": true }
+          { "name": "Curiosity_Front", "sourceType": "msl-front", "enabled": true },
+          { "name": "Curiosity_Rear", "sourceType": "msl-rear", "enabled": true },
+          { "name": "Curiosity_Left", "sourceType": "msl-left", "enabled": true },
+          { "name": "Curiosity_Right", "sourceType": "msl-right", "enabled": true },
+          { "name": "Perseverance_Front_Left", "sourceType": "m20-front-left", "enabled": true },
+          { "name": "Perseverance_Front_Right", "sourceType": "m20-front-right", "enabled": true }
         ],
         "items": {
           "type": "object",
