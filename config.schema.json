@@ -2,7 +2,7 @@
   "pluginAlias": "PublicSpaceCamPlatform",
   "pluginType": "platform",
   "singular": true,
-  "headerDisplay": "Synthetic HomeKit cameras showing Mars Curiosity rover engineering camera imagery. Each camera shows a different viewpoint from the rover. **ffmpeg is required** on your Homebridge host.",
+  "headerDisplay": "Synthetic HomeKit cameras showing Mars rover engineering camera imagery from Curiosity and Perseverance. Each camera shows a different viewpoint from the rovers. **ffmpeg is required** on your Homebridge host.",
   "footerDisplay": "Images are from NASA/JPL-Caltech via mars.nasa.gov. This is an unofficial community plugin.",
   "schema": {
     "type": "object",
@@ -50,7 +50,7 @@
       "cameras": {
         "title": "Cameras",
         "type": "array",
-        "description": "Each entry creates a separate camera accessory in HomeKit showing a different Curiosity rover viewpoint.",
+        "description": "Each entry creates a separate camera accessory in HomeKit showing a different Mars rover viewpoint.",
         "items": {
           "type": "object",
           "properties": {
@@ -70,12 +70,14 @@
               "title": "Rover Camera",
               "type": "string",
               "oneOf": [
-                { "title": "Front Hazard Avoidance Camera", "enum": ["msl-front"] },
-                { "title": "Rear Hazard Avoidance Camera", "enum": ["msl-rear"] },
-                { "title": "Left Navigation Camera", "enum": ["msl-left"] },
-                { "title": "Right Navigation Camera", "enum": ["msl-right"] }
+                { "title": "Curiosity — Front Hazcam", "enum": ["msl-front"] },
+                { "title": "Curiosity — Rear Hazcam", "enum": ["msl-rear"] },
+                { "title": "Curiosity — Left NavCam", "enum": ["msl-left"] },
+                { "title": "Curiosity — Right NavCam", "enum": ["msl-right"] },
+                { "title": "Perseverance — Front Hazcam Left", "enum": ["m20-front-left"] },
+                { "title": "Perseverance — Front Hazcam Right", "enum": ["m20-front-right"] }
               ],
-              "description": "Which Curiosity engineering camera to use."
+              "description": "Which rover engineering camera to use."
             },
             "frameIntervalSec": {
               "title": "Frame Interval (seconds)",

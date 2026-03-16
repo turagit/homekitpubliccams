@@ -1,5 +1,5 @@
 export type LogLevel = 'error' | 'warn' | 'info' | 'debug';
-export type SourceType = 'msl-front' | 'msl-rear' | 'msl-left' | 'msl-right';
+export type SourceType = 'msl-front' | 'msl-rear' | 'msl-left' | 'msl-right' | 'm20-front-left' | 'm20-front-right';
 export interface CameraConfig {
     enabled: boolean;
     sourceType: SourceType;

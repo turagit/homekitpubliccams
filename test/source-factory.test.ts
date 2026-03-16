@@ -45,8 +45,20 @@ describe('createSourceAdapter', () => {
     expect(() => createSourceAdapter(makeCameraConfig('unknown'))).toThrow();
   });
 
+  it('creates M20RawSource for m20-front-left', () => {
+    const adapter = createSourceAdapter(makeCameraConfig('m20-front-left'));
+    expect(adapter.getSourceInfo().id).toBe('m20-front-left');
+    expect(adapter.getSourceInfo().title).toContain('Perseverance');
+  });
+
+  it('creates M20RawSource for m20-front-right', () => {
+    const adapter = createSourceAdapter(makeCameraConfig('m20-front-right'));
+    expect(adapter.getSourceInfo().id).toBe('m20-front-right');
+    expect(adapter.getSourceInfo().title).toContain('Perseverance');
+  });
+
   it('all adapters have recommended refresh of 14400s', () => {
-    for (const type of ['msl-front', 'msl-rear', 'msl-left', 'msl-right']) {
+    for (const type of ['msl-front', 'msl-rear', 'msl-left', 'msl-right', 'm20-front-left', 'm20-front-right']) {
       const adapter = createSourceAdapter(makeCameraConfig(type));
       const info = adapter.getSourceInfo();
       expect(info.recommendedRefreshIntervalSec).toBe(14400);

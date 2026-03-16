@@ -4,7 +4,9 @@ export type SourceType =
   | 'msl-front'
   | 'msl-rear'
   | 'msl-left'
-  | 'msl-right';
+  | 'msl-right'
+  | 'm20-front-left'
+  | 'm20-front-right';
 
 export interface CameraConfig {
   enabled: boolean;
