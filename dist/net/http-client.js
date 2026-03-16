@@ -66,7 +66,7 @@ class HttpClient {
                 if (raw.status >= 400) {
                     throw new Error(`HTTP ${raw.status} from ${url}`);
                 }
-                return { status: raw.status, data: Buffer.from(raw.body, 'binary'), headers: raw.headers };
+                return { status: raw.status, data: raw.rawBuffer, headers: raw.headers };
             }
             catch (err) {
                 lastError = err instanceof Error ? err : new Error(String(err));
@@ -109,9 +109,11 @@ class HttpClient {
                             responseHeaders[key] = value[0];
                         }
                     }
+                    const rawBuffer = Buffer.concat(chunks);
                     resolve({
                         status: res.statusCode ?? 0,
-                        body: Buffer.concat(chunks).toString('binary'),
+                        body: rawBuffer.toString('utf-8'),
+                        rawBuffer,
                         headers: responseHeaders,
                     });
                 });

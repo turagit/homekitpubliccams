@@ -80,7 +80,7 @@ export class HttpClient {
         if (raw.status >= 400) {
           throw new Error(`HTTP ${raw.status} from ${url}`);
         }
-        return { status: raw.status, data: Buffer.from(raw.body, 'binary'), headers: raw.headers };
+        return { status: raw.status, data: raw.rawBuffer, headers: raw.headers };
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
         if (attempt < MAX_RETRIES - 1) {
@@ -91,7 +91,7 @@ export class HttpClient {
     throw lastError ?? new Error(`Failed to fetch ${url}`);
   }
 
-  private rawRequest(url: string, options: HttpRequestOptions): Promise<{ status: number; body: string; headers: Record<string, string> }> {
+  private rawRequest(url: string, options: HttpRequestOptions): Promise<{ status: number; body: string; rawBuffer: Buffer; headers: Record<string, string> }> {
     return new Promise((resolve, reject) => {
       const parsed = new URL(url);
       const client = parsed.protocol === 'https:' ? https : http;
@@ -123,9 +123,11 @@ export class HttpClient {
               responseHeaders[key] = value[0];
             }
           }
+          const rawBuffer = Buffer.concat(chunks);
           resolve({
             status: res.statusCode ?? 0,
-            body: Buffer.concat(chunks).toString('binary'),
+            body: rawBuffer.toString('utf-8'),
+            rawBuffer,
             headers: responseHeaders,
           });
         });
