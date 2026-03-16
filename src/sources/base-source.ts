@@ -33,11 +33,9 @@ export interface SourceAdapter {
 
 export abstract class BaseSourceAdapter implements SourceAdapter {
   protected readonly http: HttpClient;
-  protected readonly apiKey: string;
 
-  constructor(apiKey?: string) {
+  constructor() {
     this.http = new HttpClient();
-    this.apiKey = apiKey || 'DEMO_KEY';
   }
 
   abstract getSourceInfo(): SourceInfo;
@@ -45,14 +43,5 @@ export abstract class BaseSourceAdapter implements SourceAdapter {
 
   public validateConfig(_config: CameraConfig): ValidationResult {
     return { valid: true, issues: [] };
-  }
-
-  protected nasaApiUrl(endpoint: string, params: Record<string, string> = {}): string {
-    const url = new URL(endpoint, 'https://api.nasa.gov');
-    url.searchParams.set('api_key', this.apiKey);
-    for (const [key, value] of Object.entries(params)) {
-      url.searchParams.set(key, value);
-    }
-    return url.toString();
   }
 }

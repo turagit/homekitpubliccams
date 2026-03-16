@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateConfig = validateConfig;
-const SOURCE_TYPES = ['curiosity', 'perseverance', 'jwst', 'hubble', 'apod', 'nasa-mixed'];
+const SOURCE_TYPES = ['msl-front', 'msl-rear', 'msl-left', 'msl-right'];
 const MIN_FRAME_INTERVAL_SEC = 1;
 const MIN_REFRESH_INTERVAL_SEC = 300;
 const MIN_CACHE_ITEMS = 10;

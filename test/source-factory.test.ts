@@ -7,7 +7,7 @@ function makeCameraConfig(sourceType: string, name = 'Test'): CameraConfig {
     sourceType: sourceType as any,
     name,
     frameIntervalSec: 4,
-    refreshIntervalSec: 900,
+    refreshIntervalSec: 14400,
     maxCacheItems: 50,
     maxDiskMb: 200,
     shuffle: false,
@@ -17,54 +17,39 @@ function makeCameraConfig(sourceType: string, name = 'Test'): CameraConfig {
 }
 
 describe('createSourceAdapter', () => {
-  it('creates ApodSource for apod', () => {
-    const adapter = createSourceAdapter(makeCameraConfig('apod'));
-    expect(adapter.getSourceInfo().id).toBe('apod');
-    expect(adapter.getSourceInfo().title).toContain('Astronomy');
+  it('creates MslRawSource for msl-front', () => {
+    const adapter = createSourceAdapter(makeCameraConfig('msl-front'));
+    expect(adapter.getSourceInfo().id).toBe('msl-front');
+    expect(adapter.getSourceInfo().title).toContain('Front');
   });
 
-  it('creates MarsSource for curiosity', () => {
-    const adapter = createSourceAdapter(makeCameraConfig('curiosity'));
-    expect(adapter.getSourceInfo().id).toBe('curiosity');
-    expect(adapter.getSourceInfo().title).toContain('Curiosity');
+  it('creates MslRawSource for msl-rear', () => {
+    const adapter = createSourceAdapter(makeCameraConfig('msl-rear'));
+    expect(adapter.getSourceInfo().id).toBe('msl-rear');
+    expect(adapter.getSourceInfo().title).toContain('Rear');
   });
 
-  it('creates MarsSource for perseverance', () => {
-    const adapter = createSourceAdapter(makeCameraConfig('perseverance'));
-    expect(adapter.getSourceInfo().id).toBe('perseverance');
-    expect(adapter.getSourceInfo().title).toContain('Perseverance');
+  it('creates MslRawSource for msl-left', () => {
+    const adapter = createSourceAdapter(makeCameraConfig('msl-left'));
+    expect(adapter.getSourceInfo().id).toBe('msl-left');
+    expect(adapter.getSourceInfo().title).toContain('Left');
   });
 
-  it('creates JwstSource for jwst', () => {
-    const adapter = createSourceAdapter(makeCameraConfig('jwst'));
-    expect(adapter.getSourceInfo().id).toBe('jwst');
+  it('creates MslRawSource for msl-right', () => {
+    const adapter = createSourceAdapter(makeCameraConfig('msl-right'));
+    expect(adapter.getSourceInfo().id).toBe('msl-right');
+    expect(adapter.getSourceInfo().title).toContain('Right');
   });
 
-  it('creates HubbleSource for hubble', () => {
-    const adapter = createSourceAdapter(makeCameraConfig('hubble'));
-    expect(adapter.getSourceInfo().id).toBe('hubble');
+  it('throws for unknown sourceType', () => {
+    expect(() => createSourceAdapter(makeCameraConfig('unknown'))).toThrow();
   });
 
-  it('creates NasaImageLibrarySource for nasa-mixed', () => {
-    const adapter = createSourceAdapter(makeCameraConfig('nasa-mixed'));
-    expect(adapter.getSourceInfo().id).toBe('nasa-mixed');
-  });
-
-  it('defaults to nasa-mixed for unknown sourceType', () => {
-    const adapter = createSourceAdapter(makeCameraConfig('unknown'));
-    expect(adapter.getSourceInfo().id).toBe('nasa-mixed');
-  });
-
-  it('passes apiKey through', () => {
-    const adapter = createSourceAdapter(makeCameraConfig('apod'), 'MY_KEY');
-    expect(adapter.validateConfig(makeCameraConfig('apod')).valid).toBe(true);
-  });
-
-  it('all adapters have valid recommended refresh intervals', () => {
-    for (const type of ['apod', 'curiosity', 'perseverance', 'jwst', 'hubble', 'nasa-mixed']) {
+  it('all adapters have recommended refresh of 14400s', () => {
+    for (const type of ['msl-front', 'msl-rear', 'msl-left', 'msl-right']) {
       const adapter = createSourceAdapter(makeCameraConfig(type));
       const info = adapter.getSourceInfo();
-      expect(info.recommendedRefreshIntervalSec).toBeGreaterThanOrEqual(300);
+      expect(info.recommendedRefreshIntervalSec).toBe(14400);
     }
   });
 });

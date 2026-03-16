@@ -1,6 +1,6 @@
 import { CameraConfig, PlatformConfig, SourceType } from './types';
 
-const SOURCE_TYPES: SourceType[] = ['curiosity', 'perseverance', 'jwst', 'hubble', 'apod', 'nasa-mixed'];
+const SOURCE_TYPES: SourceType[] = ['msl-front', 'msl-rear', 'msl-left', 'msl-right'];
 
 const MIN_FRAME_INTERVAL_SEC = 1;
 const MIN_REFRESH_INTERVAL_SEC = 300;

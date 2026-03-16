@@ -22,8 +22,8 @@ describe('validateConfig', () => {
       ...baseConfig,
       cameras: [{
         enabled: true,
-        sourceType: 'apod',
-        name: 'APOD',
+        sourceType: 'msl-front',
+        name: 'Front',
         frameIntervalSec: 4,
         refreshIntervalSec: 10, // way below 300 minimum
         maxCacheItems: 50,
@@ -43,10 +43,10 @@ describe('validateConfig', () => {
       ...baseConfig,
       cameras: [{
         enabled: true,
-        sourceType: 'apod',
+        sourceType: 'msl-front',
         name: '',
         frameIntervalSec: 4,
-        refreshIntervalSec: 900,
+        refreshIntervalSec: 14400,
         maxCacheItems: 50,
         maxDiskMb: 200,
         shuffle: false,
@@ -67,7 +67,7 @@ describe('validateConfig', () => {
         sourceType: 'invalid' as any,
         name: 'Bad Source',
         frameIntervalSec: 4,
-        refreshIntervalSec: 900,
+        refreshIntervalSec: 14400,
         maxCacheItems: 50,
         maxDiskMb: 200,
         shuffle: false,
@@ -83,10 +83,10 @@ describe('validateConfig', () => {
   it('warns on duplicate camera entries', () => {
     const cam = {
       enabled: true,
-      sourceType: 'apod' as const,
-      name: 'APOD',
+      sourceType: 'msl-front' as const,
+      name: 'Front',
       frameIntervalSec: 4,
-      refreshIntervalSec: 900,
+      refreshIntervalSec: 14400,
       maxCacheItems: 50,
       maxDiskMb: 200,
       shuffle: false,
@@ -106,10 +106,10 @@ describe('validateConfig', () => {
       ...baseConfig,
       cameras: [{
         enabled: true,
-        sourceType: 'apod',
-        name: '  APOD  ',
+        sourceType: 'msl-front',
+        name: '  Front  ',
         frameIntervalSec: 4,
-        refreshIntervalSec: 900,
+        refreshIntervalSec: 14400,
         maxCacheItems: 50,
         maxDiskMb: 200,
         shuffle: false,
@@ -118,6 +118,6 @@ describe('validateConfig', () => {
       }],
     };
     const { value } = validateConfig(config);
-    expect(value.cameras![0].name).toBe('APOD');
+    expect(value.cameras![0].name).toBe('Front');
   });
 });

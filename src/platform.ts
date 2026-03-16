@@ -67,7 +67,6 @@ export class PublicSpaceCamPlatform implements DynamicPlatformPlugin {
     this.cacheManager = new CacheManager(this.storagePath);
 
     warnings.forEach((warning) => this.log.warn(`[config] ${warning}`));
-    this.warnAboutRateLimits();
 
     this.api.on('didFinishLaunching', () => {
       this.log.info('Public SpaceCam platform launched.');
@@ -98,7 +97,7 @@ export class PublicSpaceCamPlatform implements DynamicPlatformPlugin {
     const expectedUuids = new Set<string>();
 
     for (const cameraConfig of enabledCameras) {
-      const source = createSourceAdapter(cameraConfig, this.parsedConfig.apiKey);
+      const source = createSourceAdapter(cameraConfig);
       const validation = source.validateConfig(cameraConfig);
       if (!validation.valid) {
         this.log.warn(`Skipping camera source ${cameraConfig.name}: ${validation.issues.join('; ')}`);
@@ -295,31 +294,6 @@ export class PublicSpaceCamPlatform implements DynamicPlatformPlugin {
     const cam = this.accessoryFactory.getCameraAccessory(runtime.uuid);
     if (cam) {
       cam.snapshotProvider.setCurrentFrame(asset.localPath);
-    }
-  }
-
-  private warnAboutRateLimits(): void {
-    const usingDemoKey = !this.parsedConfig.apiKey || this.parsedConfig.apiKey === 'DEMO_KEY';
-    const cameraCount = (this.parsedConfig.cameras ?? []).filter((c) => c.enabled !== false).length;
-
-    if (usingDemoKey) {
-      this.log.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      this.log.warn('[rate-limit] Using DEMO_KEY — limited to 30 req/hour and 50 req/day per IP.');
-      this.log.warn('[rate-limit] Get a FREE key at https://api.nasa.gov to raise limits to 1,000/hour.');
-      if (cameraCount > 2) {
-        this.log.warn(`[rate-limit] WARNING: ${cameraCount} cameras with DEMO_KEY will likely exceed the 50 req/day daily limit.`);
-        this.log.warn('[rate-limit] Reduce to 1-2 cameras or register a free API key.');
-      }
-      this.log.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-      // Enforce a 2-hour minimum refresh for all cameras under DEMO_KEY
-      const DEMO_KEY_MIN_REFRESH = 7200;
-      for (const camera of this.parsedConfig.cameras ?? []) {
-        if (camera.refreshIntervalSec < DEMO_KEY_MIN_REFRESH) {
-          this.log.warn(`[rate-limit] Camera "${camera.name}": refresh interval raised to ${DEMO_KEY_MIN_REFRESH}s to stay within DEMO_KEY daily limit.`);
-          camera.refreshIntervalSec = DEMO_KEY_MIN_REFRESH;
-        }
-      }
     }
   }
 

@@ -2,15 +2,15 @@
   "pluginAlias": "PublicSpaceCamPlatform",
   "pluginType": "platform",
   "singular": true,
-  "headerDisplay": "Synthetic HomeKit cameras showing public NASA and space imagery. Each source appears as a separate camera in the Home app, cycling through periodically refreshed still images. **ffmpeg is required** — install it on your Homebridge host before using this plugin.",
-  "footerDisplay": "Images are from public NASA/ESA sources. This is an unofficial community plugin. For a free NASA API key visit https://api.nasa.gov",
+  "headerDisplay": "Synthetic HomeKit cameras showing Mars Curiosity rover engineering camera imagery. Each camera shows a different viewpoint from the rover. **ffmpeg is required** on your Homebridge host.",
+  "footerDisplay": "Images are from NASA/JPL-Caltech via mars.nasa.gov. This is an unofficial community plugin.",
   "schema": {
     "type": "object",
     "properties": {
       "name": {
         "title": "Platform Name",
         "type": "string",
-        "default": "Public SpaceCam",
+        "default": "Mars Curiosity",
         "description": "The name shown in Homebridge logs."
       },
       "enabled": {
@@ -18,12 +18,6 @@
         "type": "boolean",
         "default": true,
         "description": "Disable to remove all camera accessories without uninstalling."
-      },
-      "apiKey": {
-        "title": "NASA API Key",
-        "type": "string",
-        "placeholder": "DEMO_KEY",
-        "description": "Optional. Without a key, DEMO_KEY is used (limited to 30 requests/hour, 50/day per IP). Get a free key at https://api.nasa.gov to increase limits."
       },
       "logLevel": {
         "title": "Log Level",
@@ -48,15 +42,15 @@
       "defaultRefreshIntervalSec": {
         "title": "Default Refresh Interval (seconds)",
         "type": "integer",
-        "default": 900,
+        "default": 14400,
         "minimum": 300,
         "maximum": 86400,
-        "description": "How often new images are fetched from NASA. Minimum 5 minutes. Each camera can override this."
+        "description": "How often new images are fetched from Mars. Default is 4 hours. Each camera can override this."
       },
       "cameras": {
         "title": "Cameras",
         "type": "array",
-        "description": "Each entry creates a separate camera accessory in HomeKit.",
+        "description": "Each entry creates a separate camera accessory in HomeKit showing a different Curiosity rover viewpoint.",
         "items": {
           "type": "object",
           "properties": {
@@ -69,21 +63,19 @@
             "name": {
               "title": "Camera Name",
               "type": "string",
-              "placeholder": "e.g. Mars Rover",
+              "placeholder": "e.g. Front",
               "description": "The name shown in the Home app."
             },
             "sourceType": {
-              "title": "Image Source",
+              "title": "Rover Camera",
               "type": "string",
               "oneOf": [
-                { "title": "Curiosity Rover (Mars)", "enum": ["curiosity"] },
-                { "title": "Perseverance Rover (Mars)", "enum": ["perseverance"] },
-                { "title": "James Webb Space Telescope (JWST)", "enum": ["jwst"] },
-                { "title": "Hubble Space Telescope", "enum": ["hubble"] },
-                { "title": "Astronomy Picture of the Day (APOD)", "enum": ["apod"] },
-                { "title": "NASA Mixed Feed", "enum": ["nasa-mixed"] }
+                { "title": "Front Hazard Avoidance Camera", "enum": ["msl-front"] },
+                { "title": "Rear Hazard Avoidance Camera", "enum": ["msl-rear"] },
+                { "title": "Left Navigation Camera", "enum": ["msl-left"] },
+                { "title": "Right Navigation Camera", "enum": ["msl-right"] }
               ],
-              "description": "Which NASA image source to use for this camera."
+              "description": "Which Curiosity engineering camera to use."
             },
             "frameIntervalSec": {
               "title": "Frame Interval (seconds)",
@@ -96,10 +88,10 @@
             "refreshIntervalSec": {
               "title": "Refresh Interval (seconds)",
               "type": "integer",
-              "default": 900,
+              "default": 14400,
               "minimum": 300,
               "maximum": 86400,
-              "description": "Override how often new images are fetched for this camera."
+              "description": "Override how often new images are fetched for this camera. Default 4 hours."
             },
             "maxCacheItems": {
               "title": "Max Cached Images",
@@ -144,10 +136,6 @@
   "layout": [
     "name",
     "enabled",
-    {
-      "key": "apiKey",
-      "type": "string"
-    },
     "logLevel",
     {
       "type": "fieldset",

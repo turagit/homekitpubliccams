@@ -1,12 +1,10 @@
 export type LogLevel = 'error' | 'warn' | 'info' | 'debug';
 
 export type SourceType =
-  | 'curiosity'
-  | 'perseverance'
-  | 'jwst'
-  | 'hubble'
-  | 'apod'
-  | 'nasa-mixed';
+  | 'msl-front'
+  | 'msl-rear'
+  | 'msl-left'
+  | 'msl-right';
 
 export interface CameraConfig {
   enabled: boolean;
@@ -29,7 +27,6 @@ export interface PlatformConfig {
   platform: string;
   name: string;
   enabled?: boolean;
-  apiKey?: string;
   logLevel?: LogLevel;
   storagePath?: string;
   defaultFrameIntervalSec?: number;

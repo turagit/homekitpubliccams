@@ -28,10 +28,8 @@ export interface SourceAdapter {
 }
 export declare abstract class BaseSourceAdapter implements SourceAdapter {
     protected readonly http: HttpClient;
-    protected readonly apiKey: string;
-    constructor(apiKey?: string);
+    constructor();
     abstract getSourceInfo(): SourceInfo;
     abstract refreshIndex(): Promise<SourceAsset[]>;
     validateConfig(_config: CameraConfig): ValidationResult;
-    protected nasaApiUrl(endpoint: string, params?: Record<string, string>): string;
 }
