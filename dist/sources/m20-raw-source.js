@@ -28,18 +28,22 @@ class M20RawSource extends base_source_1.BaseSourceAdapter {
         };
     }
     async refreshIndex() {
+        // The RSS API is slow with large page sizes and doesn't support
+        // server-side instrument filtering. Hazcam images are sparse —
+        // they can be 500+ items deep. Use smaller pages (50) with a
+        // longer timeout and scan up to 15 pages to find them.
         const collected = [];
-        for (let page = 0; page < 3; page++) {
+        for (let page = 0; page < 15; page++) {
             const params = new URLSearchParams({
                 feed: 'raw_images',
                 category: 'mars2020',
                 feedtype: 'json',
                 order: 'sol desc',
-                num: '100',
+                num: '50',
                 page: String(page),
             });
             const url = `https://mars.nasa.gov/rss/api/?${params.toString()}`;
-            const response = await this.http.fetchJson(url, { timeoutMs: 30000 });
+            const response = await this.http.fetchJson(url, { timeoutMs: 60000 });
             const pageItems = response.data?.images ?? [];
             collected.push(...pageItems);
             // Stop early if we already have enough matching images
