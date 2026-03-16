@@ -106,7 +106,7 @@
             "maxCacheItems": {
               "title": "Max Cached Images",
               "type": "integer",
-              "default": 50,
+              "default": 20,
               "minimum": 5,
               "maximum": 500,
               "description": "Maximum number of images to keep on disk for this camera."
@@ -114,7 +114,7 @@
             "maxDiskMb": {
               "title": "Max Disk Usage (MB)",
               "type": "integer",
-              "default": 200,
+              "default": 100,
               "minimum": 20,
               "maximum": 2000,
               "description": "Maximum disk space for cached images."

@@ -14,6 +14,7 @@ const DEFAULT_TIMEOUT_MS = 60_000;
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB safety limit
 const ALLOWED_MIME_PREFIXES = [
     'image/jpeg',
+    'image/jpg',
     'image/png',
     'image/gif',
     'image/webp',
