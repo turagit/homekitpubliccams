@@ -223,13 +223,13 @@ export class PublicSpaceCamPlatform implements DynamicPlatformPlugin {
         try {
           const result = await this.downloader.download(asset.imageUrl, targetPath);
           if (!result.success) {
-            this.log.debug(`[${config.name}] Download failed for ${asset.id}: ${result.error}`);
+            this.log.warn(`[${config.name}] Download failed for ${asset.id}: ${result.error} (url: ${asset.imageUrl})`);
             return;
           }
 
           const isValid = await this.imageValidator.isValidImage(targetPath);
           if (!isValid) {
-            this.log.debug(`[${config.name}] Invalid image: ${asset.id}`);
+            this.log.warn(`[${config.name}] Invalid image: ${asset.id} (url: ${asset.imageUrl})`);
             try {
               const fs = await import('node:fs');
               await fs.promises.unlink(targetPath);
@@ -256,7 +256,7 @@ export class PublicSpaceCamPlatform implements DynamicPlatformPlugin {
           downloaded++;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          this.log.debug(`[${config.name}] Error downloading ${asset.id}: ${msg}`);
+          this.log.warn(`[${config.name}] Error downloading ${asset.id}: ${msg}`);
         }
       });
 
