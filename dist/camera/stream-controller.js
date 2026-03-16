@@ -128,7 +128,7 @@ class SpaceCamStreamingDelegate {
         const { width, height, fps, bitrate } = session;
         const args = [
             '-hide_banner',
-            '-loglevel', 'error',
+            '-loglevel', 'warning',
             '-loop', '1',
             '-f', 'image2',
             '-framerate', '1',
@@ -136,7 +136,7 @@ class SpaceCamStreamingDelegate {
             '-vf', `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:black`,
             '-codec:v', 'libx264',
             '-preset', 'ultrafast',
-            '-tune', 'stillimage',
+            '-tune', 'zerolatency',
             '-r', String(fps),
             '-b:v', `${bitrate}k`,
             '-maxrate', `${bitrate}k`,
@@ -148,24 +148,26 @@ class SpaceCamStreamingDelegate {
             '-force_key_frames', 'expr:gte(t,0)',
             '-an',
             '-payload_type', '99',
+            '-ssrc', String(session.videoSsrc),
             '-f', 'rtp',
             '-srtp_out_suite', 'AES_CM_128_HMAC_SHA1_80',
             '-srtp_out_params', srtpParams,
-            `srtp://${session.targetAddress}:${session.videoPort}?rtcpport=${session.videoPort}&pkt_size=1316`,
+            `srtp://${session.targetAddress}:${session.videoPort}?rtcpport=${session.videoPort}&localrtcpport=${session.returnVideoPort}&pkt_size=1316`,
         ];
-        this.log.info(`[${this.cameraName}] Starting stream: ${width}x${height}@${fps}fps`);
+        this.log.info(`[${this.cameraName}] Starting stream: ${width}x${height}@${fps}fps, ssrc=${session.videoSsrc}`);
         const ffmpeg = (0, node_child_process_1.spawn)(this.ffmpegPath, args, { stdio: ['pipe', 'pipe', 'pipe'] });
         session.ffmpeg = ffmpeg;
         ffmpeg.stderr?.on('data', (data) => {
             const msg = data.toString().trim();
             if (msg) {
-                this.log.debug(`[${this.cameraName}] ffmpeg: ${msg}`);
+                this.log.info(`[${this.cameraName}] ffmpeg: ${msg}`);
             }
         });
         ffmpeg.on('error', (err) => {
             this.log.error(`[${this.cameraName}] ffmpeg error: ${err.message}`);
         });
-        ffmpeg.on('close', () => {
+        ffmpeg.on('close', (code) => {
+            this.log.info(`[${this.cameraName}] ffmpeg exited with code ${code}`);
             session.ffmpeg = undefined;
         });
     }
