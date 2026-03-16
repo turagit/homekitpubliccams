@@ -41,23 +41,11 @@ class M20RawSource extends base_source_1.BaseSourceAdapter {
         });
         const url = `https://mars.nasa.gov/rss/api/?${params.toString()}`;
         const response = await this.http.fetchJson(url, { timeoutMs: 60000 });
-        const data = response.data;
-        // Debug: log top-level keys and counts to diagnose empty results
-        if (data) {
-            const keys = Object.keys(data);
-            const imageCount = Array.isArray(data.images) ? data.images.length : 'not-array';
-            console.log(`[M20 debug] keys=${keys.join(',')}, images=${imageCount}, total=${data.total_results}`);
-            if (Array.isArray(data.images) && data.images.length > 0) {
-                const first = data.images[0];
-                console.log(`[M20 debug] first: instrument=${first.instrument}, sample_type=${first.sample_type}, imageid=${first.imageid}`);
-            }
-        }
-        else {
-            console.log(`[M20 debug] response.data is ${data}`);
-        }
-        const allItems = data?.images ?? [];
-        // Filter to full-size images only (exclude thumbnails)
-        const images = allItems.filter((img) => img.instrument === this.instrument && img.sample_type === 'Full');
+        const allItems = response.data?.images ?? [];
+        // The `search` param already filters by instrument server-side.
+        // Only filter by sample_type here (the `instrument` field may not
+        // be present in the RSS response).
+        const images = allItems.filter((img) => img.sample_type === 'Full');
         return images.map((img) => ({
             id: `m20-${this.instrument}-${img.imageid}`,
             sourceId: this.sourceType,

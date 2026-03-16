@@ -194,7 +194,6 @@ export class SpaceCamStreamingDelegate implements CameraStreamingDelegate {
       '-codec:v', 'libx264',
       '-preset', 'ultrafast',
       '-tune', 'zerolatency',
-      '-r', String(fps),
       '-b:v', `${bitrate}k`,
       '-maxrate', `${bitrate}k`,
       '-bufsize', `${bitrate * 2}k`,
