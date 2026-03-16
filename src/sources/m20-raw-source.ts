@@ -55,43 +55,24 @@ export class M20RawSource extends BaseSourceAdapter {
   }
 
   public async refreshIndex(): Promise<SourceAsset[]> {
-    // The RSS API is slow with large page sizes and doesn't support
-    // server-side instrument filtering. Hazcam images are sparse —
-    // they can be 500+ items deep. Use smaller pages (50) with a
-    // longer timeout and scan up to 15 pages to find them.
-    const collected: M20RawImageItem[] = [];
+    // Use the `search` parameter to filter by instrument server-side.
+    // Without it, hazcam images are buried 500+ items deep in the feed.
+    const params = new URLSearchParams({
+      feed: 'raw_images',
+      category: 'mars2020',
+      feedtype: 'json',
+      order: 'sol desc',
+      num: '50',
+      page: '0',
+      search: this.instrument,
+    });
 
-    for (let page = 0; page < 15; page++) {
-      const params = new URLSearchParams({
-        feed: 'raw_images',
-        category: 'mars2020',
-        feedtype: 'json',
-        order: 'sol desc',
-        num: '50',
-        page: String(page),
-      });
+    const url = `https://mars.nasa.gov/rss/api/?${params.toString()}`;
+    const response = await this.http.fetchJson<M20RawResponse>(url, { timeoutMs: 60000 });
+    const allItems = response.data?.images ?? [];
 
-      const url = `https://mars.nasa.gov/rss/api/?${params.toString()}`;
-      const response = await this.http.fetchJson<M20RawResponse>(url, { timeoutMs: 60000 });
-      const pageItems = response.data?.images ?? [];
-      collected.push(...pageItems);
-
-      // Stop early if we already have enough matching images
-      const matching = collected.filter(
-        (img) => img.instrument === this.instrument && img.sample_type === 'Full',
-      );
-      if (matching.length >= 10) {
-        break;
-      }
-
-      // Stop if no more pages
-      if (pageItems.length === 0) {
-        break;
-      }
-    }
-
-    // Filter to our specific instrument, full-size only
-    const images = collected.filter(
+    // Filter to full-size images only (exclude thumbnails)
+    const images = allItems.filter(
       (img) => img.instrument === this.instrument && img.sample_type === 'Full',
     );
 

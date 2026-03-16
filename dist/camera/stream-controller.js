@@ -134,6 +134,7 @@ class SpaceCamStreamingDelegate {
             '-framerate', '1',
             '-i', framePath,
             '-vf', `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:black`,
+            '-fps_mode', 'passthrough',
             '-codec:v', 'libx264',
             '-preset', 'ultrafast',
             '-tune', 'zerolatency',
