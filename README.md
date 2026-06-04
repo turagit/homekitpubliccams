@@ -1,17 +1,19 @@
 # homebridge-public-spacecam
 
-A Homebridge plugin that creates synthetic HomeKit camera accessories from NASA's Mars Curiosity rover engineering cameras. Four cameras appear in the Home app — Front, Rear, Left, and Right — each cycling through real images taken by the rover on Mars.
+A Homebridge plugin that creates synthetic HomeKit camera accessories from NASA Mars rover engineering cameras. Cameras from both Curiosity and Perseverance can appear in the Home app, each cycling through real images taken on Mars.
 
 **This is not a live scientific camera.** It is a synthetic camera built from periodically fetched public images via the `mars.nasa.gov` raw images API.
 
 ## Available Cameras
 
-| Camera | Instrument | Description |
-|--------|-----------|-------------|
-| **Front** | Front Hazcam (FHAZ) | Forward-facing hazard avoidance camera |
-| **Rear** | Rear Hazcam (RHAZ) | Rear-facing hazard avoidance camera |
-| **Left** | Left NavCam | Left navigation camera |
-| **Right** | Right NavCam | Right navigation camera |
+| Camera | Source Type | Instrument | Description |
+|--------|-------------|------------|-------------|
+| **Curiosity Front** | `msl-front` | Front Hazcam (FHAZ) | Forward-facing hazard avoidance camera |
+| **Curiosity Rear** | `msl-rear` | Rear Hazcam (RHAZ) | Rear-facing hazard avoidance camera |
+| **Curiosity Left** | `msl-left` | Left NavCam | Left navigation camera |
+| **Curiosity Right** | `msl-right` | Right NavCam | Right navigation camera |
+| **Perseverance Front Left** | `m20-front-left` | Front Hazcam Left | Forward-facing left hazard camera |
+| **Perseverance Front Right** | `m20-front-right` | Front Hazcam Right | Forward-facing right hazard camera |
 
 All cameras refresh every 4 hours by default. No API key is required — the `mars.nasa.gov` endpoint is unauthenticated.
 
@@ -88,7 +90,7 @@ sudo npm link
 After installing, go to the **Plugins** tab in the Homebridge UI and click **Settings** on Public SpaceCam. The configuration form lets you:
 
 - Add cameras by clicking **Add Camera**
-- Choose a rover camera (Front, Rear, Left, Right) and name for each
+- Choose a supported rover camera and name for each
 - Adjust refresh intervals, cache sizes, and display options
 
 ### Manual configuration (config.json)
@@ -98,12 +100,14 @@ Add this to the `platforms` array in your Homebridge `config.json`:
 ```json
 {
   "platform": "PublicSpaceCamPlatform",
-  "name": "Mars Curiosity",
+  "name": "Mars Rovers",
   "cameras": [
-    { "name": "Front", "sourceType": "msl-front", "enabled": true },
-    { "name": "Rear", "sourceType": "msl-rear", "enabled": true },
-    { "name": "Left", "sourceType": "msl-left", "enabled": true },
-    { "name": "Right", "sourceType": "msl-right", "enabled": true }
+    { "name": "Curiosity_Front", "sourceType": "msl-front", "enabled": true },
+    { "name": "Curiosity_Rear", "sourceType": "msl-rear", "enabled": true },
+    { "name": "Curiosity_Left", "sourceType": "msl-left", "enabled": true },
+    { "name": "Curiosity_Right", "sourceType": "msl-right", "enabled": true },
+    { "name": "Perseverance_Front_Left", "sourceType": "m20-front-left", "enabled": true },
+    { "name": "Perseverance_Front_Right", "sourceType": "m20-front-right", "enabled": true }
   ]
 }
 ```
@@ -114,6 +118,8 @@ Add this to the `platforms` array in your Homebridge `config.json`:
 
 | Option | Default | Description |
 |--------|---------|-------------|
+| `name` | `Mars Rovers` | The platform name shown in Homebridge logs |
+| `enabled` | `true` | Disable to remove all camera accessories without uninstalling |
 | `logLevel` | `info` | `error`, `warn`, `info`, or `debug` |
 | `defaultFrameIntervalSec` | `10` | How often the displayed image changes (seconds) |
 | `defaultRefreshIntervalSec` | `14400` | How often new images are fetched (seconds, min 300) |
@@ -123,12 +129,12 @@ Add this to the `platforms` array in your Homebridge `config.json`:
 | Option | Default | Description |
 |--------|---------|-------------|
 | `name` | *(required)* | Camera name shown in Home app |
-| `sourceType` | *(required)* | `msl-front`, `msl-rear`, `msl-left`, or `msl-right` |
+| `sourceType` | *(required)* | `msl-front`, `msl-rear`, `msl-left`, `msl-right`, `m20-front-left`, or `m20-front-right` |
 | `enabled` | `true` | Show/hide this camera |
 | `frameIntervalSec` | `10` | Override frame change interval |
 | `refreshIntervalSec` | `14400` | Override source refresh interval |
-| `maxCacheItems` | `50` | Max images cached on disk |
-| `maxDiskMb` | `200` | Max disk space for this camera's cache |
+| `maxCacheItems` | `20` | Max images cached on disk |
+| `maxDiskMb` | `100` | Max disk space for this camera's cache |
 | `shuffle` | `false` | Show images in random order |
 | `retainLastGood` | `true` | Keep last image if refresh fails |
 | `preferLandscape` | `true` | Prefer wider images |
@@ -154,7 +160,7 @@ Home App
         -> SnapshotProvider (current frame JPEG)
       -> FrameScheduler (image sequencing)
       -> CacheManager (disk-backed, bounded)
-        -> MslRawSource (mars.nasa.gov API)
+        -> Rover source adapter (Curiosity or Perseverance via mars.nasa.gov)
 ```
 
 ## Storage
