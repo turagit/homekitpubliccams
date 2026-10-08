@@ -36,6 +36,9 @@ npm install --prefix /var/lib/homebridge homebridge-public-spacecam-1.0.0.tgz &&
 
 ## Hard rules
 
+- `node_modules/` is committed (no `.gitignore`), so `npm install` can change
+  tracked files. Check `git status` afterwards and don't commit dependency
+  churn by accident.
 - `dist/` and the `.tgz` ship from the repo. After a source change, rebuild
   and re-pack them in the same commit, or the README install path ships stale
   code.
